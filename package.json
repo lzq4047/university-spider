@@ -22,7 +22,9 @@
   },
   "homepage": "https://github.com/lzq4047/university-spider#readme",
   "dependencies": {
+    "axios": "^0.16.2",
     "cheerio": "^1.0.0-rc.2",
-    "request": "^2.82.0"
+    "request": "^2.82.0",
+    "request-promise-native": "^1.0.4"
   }
 }
