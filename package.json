@@ -1,0 +1,28 @@
+{
+  "name": "university-spider",
+  "version": "1.0.0",
+  "description": "a spider of fetching universities in China based on Node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lzq4047/university-spider.git"
+  },
+  "keywords": [
+    "university",
+    "spider",
+    "node"
+  ],
+  "author": "lzq4047",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lzq4047/university-spider/issues"
+  },
+  "homepage": "https://github.com/lzq4047/university-spider#readme",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "request": "^2.82.0"
+  }
+}
