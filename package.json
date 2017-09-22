@@ -23,6 +23,7 @@
   "homepage": "https://github.com/lzq4047/university-spider#readme",
   "dependencies": {
     "axios": "^0.16.2",
-    "cheerio": "^1.0.0-rc.2"
+    "cheerio": "^1.0.0-rc.2",
+    "mysql": "^2.14.1"
   }
 }

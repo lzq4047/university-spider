@@ -2,6 +2,21 @@ const util = require('util');
 const fs = require('fs');
 const axios = require('axios')
 const cheerio = require('cheerio');
+const mysql = require('mysql')
+const DBConfig = {
+  host: 'localhost',
+  user: 'root',
+  password: 'root',
+  database: 'she'
+}
+const connection = mysql.createConnection(DBConfig)
+connection.connect(err => {
+  if(err) {
+    console.error(err);
+    return
+  }
+  console.log(`connected as id ${connection.threadId}`);
+})
 
 const readFile = util.promisify(fs.readFile);
 
@@ -27,7 +42,7 @@ class Spider {
   }
 
   fetchData() {
-    // console.log('Starting fetch provinces...')
+    console.log('Starting fetch provinces...')
     return new Promise(async (resolve, reject) => {
       const response = await axios.get(this.url, options)
       const html = response.data
@@ -42,19 +57,26 @@ class Spider {
       resolve(provinces)
     })
   }
-
+  async saveInFile(content) {
+    await fs.appendFile('schools.txt', content)
+  }
   async start() {
-    try {
-      this.provinces = await this.fetchData()
-      this.provinces.forEach(async (result, index) => {
-        sleep(1)
-        const schoolSpider = new SchoolSpider(result.link, result.name)
-        const schools = await schoolSpider.start()
-        console.log(`${result.name}:${schools.length}`)
-      })
-    } catch (err) {
-      console.error(err);
-    }
+    let schools = {}
+    this.provinces = await this.fetchData()
+    await sleep(1)
+    this.provinces.forEach(async (item, index) => {
+      await sleep(1)
+      const codePattern = /daxue-(\d+)/
+      const province = {
+        name: item.name,
+        code: +codePattern.exec(item.link)[1]
+      }
+      const schoolSpider = new SchoolSpider(item.link, province)
+      const schoolsInProvinces = await schoolSpider.start()
+      schools[province.name] = schoolsInProvinces
+      // this.saveInFile(`${province.name}: ${schoolsInProvinces.join(', ')}\r\n`)
+    })
+    // connection.end()
   }
 }
 
@@ -66,15 +88,15 @@ class SchoolSpider extends Spider {
     this.schools = []
   }
   fetchData() {
-    // console.log(`Starting fetch schools of ${this.province}...`)
+    console.log(`Starting fetch schools of ${this.province.name}...`)
     return new Promise(async (resolve, reject) => {
       const response = await axios.get(this.url, options)
-      sleep(3)
+      await sleep(1)
       const html = response.data
       const $ = cheerio.load(html)
       const pages = $('.schoolFilter .pm .t').text().split('/')[1]
-      for(let i = 1; i <= pages; i++) {
-        sleep(3)
+      for(let i = 1; i <= +pages; i++) {
+        await sleep(1)
         const schoolsInPage = await this.fetchDataByPage(i)
         this.schools = [...this.schools, ...schoolsInPage]
       }
@@ -82,7 +104,7 @@ class SchoolSpider extends Spider {
     })
   }
   fetchDataByPage(page) {
-    // console.log(`Starting fetch schools of page ${page} in ${this.province}...`)
+    console.log(`Starting fetch schools of page ${page} in ${this.province.name}...`)
     return new Promise(async (resolve, reject) => {
       const realLink = `${this.url.slice(0, -5)}--p-${page}.html`
       const response = await axios.get(realLink, options)
@@ -92,7 +114,14 @@ class SchoolSpider extends Spider {
       const schools = schoolElements.map((index, element) => {
         return $(element).text()
       }).get()
-      debugger
+      schools.forEach(item => {
+        connection.query(`INSERT INTO schools(name, province_code, province_name) VALUES("${item}", ${this.province.code}, "${this.province.name}")`, (err, results, fields) => {
+          if(err) {
+            console.error(err);
+            return
+          }
+        })
+      })
       resolve(schools)
     })
   }
